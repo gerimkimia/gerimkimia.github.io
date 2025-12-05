@@ -1,528 +1,401 @@
-<html lang="en">
-  <head>
-    <meta name="author" content="MohamedDine" />
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Sweetheart - Leaa❤️</title>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaa ❤️ - My Sweetheart</title>
     <link rel="icon" href="icon.png">
-    <link rel="shortcut icon" href="icon.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-      @import url("https://fonts.googleapis.com/css?family=Dosis:800|Lobster|Pacifico");
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap');
 
-      * {
-        box-sizing: border-box;
-        -webkit-box-sizing: border-box;
-        -moz-box-sizing: border-box;
-        padding: 0;
-        margin: 0;
-      }
-
-      canvas {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: -1; /* Mengatur agar tetap di belakang elemen lain */
-        pointer-events: none; /* Agar tidak menghalangi interaksi dengan elemen lain */
-      }
-
-      body {
-        font-family: "Dosis";
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
-      }
-
-      .card {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        text-align: center;
-        max-width: 800px;
-        width: 80%;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .heart-container {
-        margin: 2rem 0;
-        position: relative;
-      }
-
-      .heart {
-        fill: #ff4b6e;
-        transform-origin: center;
-        animation: pulse 1.5s ease-in-out infinite;
-      }
-
-      .message {
-        font-size: 2.5rem;
-        font-family: "Dosis";
-        font-weight: bold;
-        color: #ffb3c3;
-        margin: 1rem 0;
-        opacity: 0;
-        transform: translateY(20px);
-        animation: fadeIn 1s ease-out forwards;
-      }
-
-      .btn-container {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin: 1rem 0;
-      }
-
-      .btn {
-        background: #ff4b6e;
-        color: white;
-        border: none;
-        padding: 1rem 2rem;
-        border-radius: 50px;
-        font-size: 1.1rem;
-        cursor: pointer;
-        transition: transform 0.3s, background 0.3s;
-        transition: 0.5s all;
-      }
-
-      a {
-        text-decoration: none;
-        color: white;
-      }
-
-      .btn-hide1 .btn-hide2 .btn-hide3 {
-        display: none !important;
-        opacity: 0;
-      }
-
-      .btn:hover {
-        background: #ff3356;
-        transform: scale(1.05);
-      }
-
-      .btn.no {
-        background: #666;
-      }
-
-      .btn.no:hover {
-        background: #555;
-      }
-
-      .floating-hearts {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-      }
-
-      .question {
-        display: none;
-      }
-
-      .question.active {
-        display: block;
-      }
-
-      .no-btn-container {
-        position: relative;
-      }
-
-      .no-btn-container .btn.no {
-        position: relative;
-      }
-
-      @keyframes pulse {
-        0% {
-          transform: scale(1);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        50% {
-          transform: scale(1.1);
-        }
-        100% {
-          transform: scale(1);
-        }
-      }
 
-      @keyframes fadeIn {
-        to {
-          opacity: 1;
-          transform: translateY(0);
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
         }
-      }
 
-      @keyframes float {
-        0% {
-          transform: translateY(0) rotate(0deg);
+        /* Animated Background Hearts */
+        .floating-hearts {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
         }
-        100% {
-          transform: translateY(-100vh) rotate(360deg);
-        }
-      }
 
-      @keyframes dodge {
-        0% {
-          transform: translateX(0);
+        .heart {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 20px;
+            animation: float 15s infinite linear;
         }
-        50% {
-          transform: translateX(100px);
-        }
-        100% {
-          transform: translateX(0);
-        }
-      }
 
-      .sparkle {
-        fill: #ffd700;
-        animation: sparkle 1s ease-in-out infinite;
-      }
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
 
-      @keyframes sparkle {
-        0% {
-          opacity: 0;
+        /* Main Container */
+        .main-container {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
-        50% {
-          opacity: 1;
-        }
-        100% {
-          opacity: 0;
-        }
-      }
 
-      .broken-heart {
-        display: none;
-        fill: #666;
-      }
+        /* Hero Section */
+        .hero-section {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .name-title {
+            font-size: 5rem;
+            font-weight: 800;
+            text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #ffe0e6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            }
+            to {
+                text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 192, 203, 0.6);
+            }
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+            opacity: 0.95;
+        }
+
+        .heart-icon {
+            font-size: 3rem;
+            color: #ff4b6e;
+            animation: pulse 1.5s ease-in-out infinite;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        /* Cards Grid */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .feature-card:hover::before {
+            left: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(255, 75, 110, 0.3);
+        }
+
+        .feature-card-icon {
+            font-size: 4rem;
+            color: #ff4b6e;
+            margin-bottom: 20px;
+            display: block;
+            line-height: 1;
+        }
+
+        .feature-card-icon::before {
+            display: inline-block;
+        }
+
+        .feature-card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .feature-card-description {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .feature-card-btn {
+            background: #ff4b6e;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .feature-card-btn:hover {
+            background: #ff3356;
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 75, 110, 0.4);
+            color: white;
+        }
+
+        /* Decorative Elements */
+        .sparkle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            animation: sparkle 2s infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% {
+                opacity: 0;
+                transform: scale(0);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feature-card {
+            animation: fadeInUp 0.8s ease-out backwards;
+        }
+
+        .feature-card:nth-child(1) {
+            animation-delay: 0.2s;
+        }
+
+        .feature-card:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+
+        .feature-card:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .name-title {
+                font-size: 3rem;
+            }
+
+            .subtitle {
+                font-size: 1.2rem;
+            }
+
+            .cards-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .feature-card {
+                padding: 30px 20px;
+            }
+        }
     </style>
-  </head>
-  <body>
-    <canvas></canvas>
-    <div class="card">
-      <div class="heart-container">
-        <svg viewBox="0 0 100 100" width="100" height="100">
-          <path class="heart" d="M50 88.9L16.7 55.6C7.2 46.1 7.2 30.9 16.7 21.4s24.7-9.5 34.2 0L50 20.5l-0.9 0.9c9.5-9.5 24.7-9.5 34.2 0s9.5 24.7 0 34.2L50 88.9z" />
-          <path class="broken-heart" d="M50 88.9L16.7 55.6C7.2 46.1 7.2 30.9 16.7 21.4s24.7-9.5 34.2 0L50 20.5l-0.9 0.9c9.5-9.5 24.7-9.5 34.2 0s9.5 24.7 0 34.2L50 88.9z" />
-          <circle class="sparkle" cx="25" cy="25" r="2" />
-          <circle class="sparkle" cx="75" cy="25" r="2" />
-          <circle class="sparkle" cx="50" cy="15" r="2" />
-        </svg>
-      </div>
+</head>
+<body>
+    <!-- Floating Hearts Background -->
+    <div class="floating-hearts" id="floatingHearts"></div>
 
-      <div class="question active" id="q1">
-        <h1 class="message" id="typing-text1"></h1>
-        <div class="btn-container">
-          <button class="btn btn-hide1" id="buttonke1" onclick="nextQuestion(true, 1)">SAYANGG BANGETT!</button>
-          <div class="no-btn-container">
-            <button class="btn no ke1 btn-hide1" onmouseover="dodgeNo1()">biasa aja</button>
-          </div>
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="name-title">LEAA</h1>
+            <div class="heart-icon">❤️</div>
+            <p class="subtitle">My Sweetheart</p>
+            <p class="subtitle" style="font-size: 1.2rem; margin-top: 10px;">Selamat Datang di Website Khusus untuk Kamu</p>
         </div>
-      </div>
 
-      <div class="question" id="q2">
-        <h1 class="message" id="typing-text2"></h1>
-        <div class="btn-container">
-          <button class="btn btn-hide2" id="buttonke2" onclick="nextQuestion(true, 2)">CINTAA DONG!</button>
-          <div class="no-btn-container">
-            <button class="btn no ke2 btn-hide2" onmouseover="dodgeNo2()">GAK DULU!</button>
-          </div>
-        </div>
-      </div>
+        <!-- Feature Cards -->
+        <div class="cards-container">
+            <div class="feature-card" onclick="window.location.href='index.html'">
+                <i class="bi bi-heart-fill feature-card-icon"></i>
+                    <h3 class="feature-card-title">Love Message</h3>
+                    <p class="feature-card-description">
+                        Pesan cinta khusus untuk kamu. Klik untuk melihat pesan romantis yang sudah disiapkan dengan penuh cinta ❤️
+                    </p>
+                    <a href="lovemsg.html" class="feature-card-btn">
+                        <i class="bi bi-arrow-right"></i> Buka Pesan
+                    </a>
+            </div>
 
-      <div class="question" id="q3">
-        <h1 class="message" id="typing-text3"></h1>
-        <div class="btn-container">
-          <button class="btn btn-hide3" id="buttonke3" onclick="nextQuestion(true, 3)">BANGETTT 100000x!</button>
-          <div class="no-btn-container">
-            <button class="btn no ke3 btn-hide3" onmouseover="dodgeNo3()">HUAK CUIHH!</button>
-          </div>
-        </div>
-      </div>
+            <div class="feature-card" onclick="window.location.href='Tools/RumusKimia.html'">
+                <i class="bi bi-calculator-fill feature-card-icon"></i>
+                    <h3 class="feature-card-title">Kalkulator Kimia</h3>
+                    <p class="feature-card-description">
+                        Sistem perhitungan kimia dengan alur perhitungan lengkap. Sempurna untuk membantu kamu belajar kimia! 🧪
+                    </p>
+                    <a href="Tools/RumusKimia.html" class="feature-card-btn">
+                        <i class="bi bi-arrow-right"></i> Mulai Hitung
+                    </a>
+            </div>
 
-      <div class="question" id="final">
-        <h1 class="message">
-          <p id="typing-textFinal"></p>
-          <br />
-          Kamu orang yang selalu buat aku bahagia...
-          <a href="heart.html"> ❤️ </a>
-        </h1>
-      </div>
-      <div class="question" id="rejected">
-        <h1 class="message">😢 But... but... please?</h1>
-        <div class="btn-container">
-          <button class="btn" onclick="resetQuestions()">Ok, let me try again</button>
+            <div class="feature-card">
+                <i class="bi bi-stars feature-card-icon"></i>
+                    <h3 class="feature-card-title">Coming Soon</h3>
+                    <p class="feature-card-description">
+                        Fitur-fitur menarik lainnya akan segera hadir. Tetap semangat belajar dan jaga kesehatan ya! ✨
+                    </p>
+                    <button class="feature-card-btn" style="opacity: 0.7; cursor: not-allowed;" disabled>
+                        <i class="bi bi-hourglass-split"></i> Segera Hadir
+                    </button>
+            </div>
         </div>
-      </div>
-      <div class="floating-hearts"></div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Made with ❤️ for Leaa</p>
+            <p style="margin-top: 5px; font-size: 0.8rem;">© 2025 - All Rights Reserved</p>
+        </div>
     </div>
+
     <script>
-      var canvas = document.querySelector("canvas"),
-        ctx = canvas.getContext("2d");
-
-      var ww, wh;
-      var maxHearts = 100; // Batasi jumlah hati yang dirender
-      var hearts = [];
-
-      function onResize() {
-        ww = canvas.width = window.innerWidth;
-        wh = canvas.height = window.innerHeight;
-      }
-
-      ctx.strokeStyle = "red";
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = "hsla(0, 100%, 60%,0.5)";
-
-      var precision = 100;
-
-      var Heart = function () {
-        this.x = Math.random() * ww;
-        this.y = Math.random() * wh;
-        this.size = Math.random() * 2 + 1;
-        this.speedX = (Math.random() - 0.5) * 4;
-        this.speedY = (Math.random() - 0.5) * 4;
-        this.speedSize = Math.random() * 0.02 + 0.005;
-        this.opacity = Math.random() * 0.5 + 0.5;
-        this.blur = Math.random() * 10 + 5;
-        this.vertices = [];
-
-        for (var i = 0; i < precision; i++) {
-          var step = (i / precision - 0.5) * (Math.PI * 2);
-          this.vertices.push({
-            x: 15 * Math.pow(Math.sin(step), 3),
-            y: -(13 * Math.cos(step) - 5 * Math.cos(2 * step) - 2 * Math.cos(3 * step) - Math.cos(4 * step)),
-          });
-        }
-      };
-
-      Heart.prototype.draw = function () {
-        this.size -= this.speedSize;
-        this.x += this.speedX;
-        this.y += this.speedY;
-
-        if (this.size <= 0) return;
-
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.scale(this.size, this.size);
-        ctx.beginPath();
-        for (var i = 0; i < precision; i++) {
-          ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
-        }
-        ctx.globalAlpha = this.opacity;
-        ctx.shadowBlur = this.blur;
-        ctx.shadowColor = "rgba(255, 0, 0, 0.5)";
-        ctx.fillStyle = "rgba(255, 0, 0, 0.6)";
-        ctx.fill();
-        ctx.restore();
-      };
-
-      function render() {
-        ctx.clearRect(0, 0, ww, wh);
-
-        if (hearts.length < maxHearts) {
-          hearts.push(new Heart());
+        // Create floating hearts
+        function createFloatingHearts() {
+            const container = document.getElementById('floatingHearts');
+            const heartSymbols = ['❤️', '💕', '💖', '💗', '💝', '💓', '💞'];
+            
+            for (let i = 0; i < 15; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart';
+                heart.textContent = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.animationDelay = Math.random() * 15 + 's';
+                heart.style.fontSize = (Math.random() * 15 + 15) + 'px';
+                container.appendChild(heart);
+            }
         }
 
-        hearts.forEach((heart, index) => {
-          heart.draw();
-          if (heart.size <= 0 || heart.x < 0 || heart.x > ww || heart.y < 0 || heart.y > wh) {
-            hearts.splice(index, 1);
-          }
+        // Create sparkles
+        function createSparkles() {
+            const container = document.querySelector('.main-container');
+            for (let i = 0; i < 20; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.top = Math.random() * 100 + '%';
+                sparkle.style.animationDelay = Math.random() * 2 + 's';
+                sparkle.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                container.appendChild(sparkle);
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            createFloatingHearts();
+            createSparkles();
         });
 
-        requestAnimationFrame(render);
-      }
-
-      onResize();
-      window.addEventListener("resize", onResize);
-      requestAnimationFrame(render);
-
-      const text1 = "Kamu sayang aku ga? 💝";
-      const text2 = "HEHE, aku juga sayang kamu, kamu cinta aku ga? 🌹";
-      const text3 = "CINTAA BANGETT?!?";
-      const textFinal = "HEHE Coba tekan Love nya 🤗";
-      // script.js
-      const typingElement1 = document.getElementById("typing-text1");
-      const typingElement2 = document.getElementById("typing-text2");
-      const typingElement3 = document.getElementById("typing-text3");
-      const typingElementFinal = document.getElementById("typing-textFinal");
-      const Button1 = document.getElementById("buttonke1");
-      const Button2 = document.getElementById("buttonke2");
-      const Button3 = document.getElementById("buttonke3");
-      const btnhide1 = document.querySelector(".btn-hide1");
-      const btnhide2 = document.querySelector(".btn-hide2");
-      const btnhide3 = document.querySelector(".btn-hide3");
-      const nobtnhide1 = document.querySelector(".no.btn-hide1");
-      const nobtnhide2 = document.querySelector(".no.btn-hide2");
-      const nobtnhide3 = document.querySelector(".no.btn-hide3");
-
-      let index = 0;
-      let isTyping = false;
-
-      function typeEffect1() {
-        if (index < text1.length) {
-          btnhide1.style.display = "none";
-          nobtnhide1.style.display = "none";
-          typingElement1.innerHTML += text1.charAt(index);
-          index++;
-          setTimeout(typeEffect1, 70); // Kecepatan mengetik
-        } else {
-          isTyping = false;
-          btnhide1.style.display = "inline-block";
-          nobtnhide1.style.display = "inline-block";
-        }
-      }
-      function typeEffect2() {
-        if (index < text2.length) {
-          btnhide2.style.display = "none";
-          nobtnhide2.style.display = "none";
-          typingElement2.innerHTML += text2.charAt(index);
-          index++;
-          setTimeout(typeEffect2, 50); // Kecepatan mengetik
-        } else {
-          isTyping = false;
-          btnhide2.style.display = "inline-block";
-          nobtnhide2.style.display = "inline-block";
-        }
-      }
-      function typeEffect3() {
-        if (index < text3.length) {
-          btnhide3.style.display = "none";
-          nobtnhide3.style.display = "none";
-          typingElement3.innerHTML += text3.charAt(index);
-          index++;
-          setTimeout(typeEffect3, 100); // Kecepatan mengetik
-        } else {
-          isTyping = false;
-          btnhide3.style.display = "inline-block";
-          nobtnhide3.style.display = "inline-block";
-        }
-      }
-      function typeEffectFinal() {
-        if (index < textFinal.length) {
-          typingElementFinal.innerHTML += textFinal.charAt(index);
-          index++;
-          setTimeout(typeEffectFinal, 50); // Kecepatan mengetik
-        } else {
-          isTyping = false;
-        }
-      }
-
-      typeEffect1();
-
-      Button1.addEventListener("click", () => {
-        if (!isTyping) {
-          isTyping = true;
-          typingElement1.innerHTML = ""; // Kosongkan teks
-          index = 0;
-          typeEffect2(); // Jalankan animasi mengetik
-        }
-      });
-      Button2.addEventListener("click", () => {
-        if (!isTyping) {
-          isTyping = true;
-          typingElement2.innerHTML = ""; // Kosongkan teks
-          index = 0;
-          typeEffect3(); // Jalankan animasi mengetik
-        }
-      });
-      Button3.addEventListener("click", () => {
-        if (!isTyping) {
-          isTyping = true;
-          typingElement3.innerHTML = ""; // Kosongkan teks
-          index = 0;
-          typeEffectFinal(); // Jalankan animasi mengetik
-        }
-      });
-
-      let noButtonDodgeCount = 0;
-      const maxDodges = 100;
-
-      function nextQuestion(accepted, questionNumber) {
-        if (accepted) {
-          document.querySelector(`#q${questionNumber}`).classList.remove("active");
-          if (questionNumber < 3) {
-            document.querySelector(`#q${questionNumber + 1}`).classList.add("active");
-          } else {
-            document.querySelector("#final").classList.add("active");
-            celebrateAcceptance();
-          }
-        }
-      }
-
-      function handleNo() {
-        if (noButtonDodgeCount >= maxDodges) {
-          document.querySelectorAll(".question").forEach((q) => q.classList.remove("active"));
-          document.querySelector("#rejected").classList.add("active");
-          document.querySelector(".heart").style.display = "none";
-          document.querySelector(".broken-heart").style.display = "block";
-        }
-      }
-
-      function dodgeNo1() {
-        if (noButtonDodgeCount < maxDodges) {
-          const btn = document.querySelector(".btn.no.ke1");
-          btn.style.transform = `translate(${Math.random() * 500 - 300}px, ${Math.random() * 300 - 100}px)`;
-          noButtonDodgeCount++;
-        }
-      }
-      function dodgeNo2() {
-        if (noButtonDodgeCount < maxDodges) {
-          const btn = document.querySelector(".btn.no.ke2");
-          btn.style.transform = `translate(${Math.random() * 500 - 300}px, ${Math.random() * 300 - 100}px)`;
-          noButtonDodgeCount++;
-        }
-      }
-      function dodgeNo3() {
-        if (noButtonDodgeCount < maxDodges) {
-          const btn = document.querySelector(".btn.no.ke3");
-          btn.style.transform = `translate(${Math.random() * 500 - 300}px, ${Math.random() * 300 - 100}px)`;
-          noButtonDodgeCount++;
-        }
-      }
-
-      function resetQuestions() {
-        document.querySelectorAll(".question").forEach((q) => q.classList.remove("active"));
-        document.querySelector("#q1").classList.add("active");
-        document.querySelector(".heart").style.display = "block";
-        document.querySelector(".broken-heart").style.display = "none";
-        noButtonDodgeCount = 0;
-        const noBtn = document.querySelector(".btn.no");
-        noBtn.style.transform = "none";
-      }
-
-      function celebrateAcceptance() {
-        const container = document.querySelector(".floating-hearts");
-        for (let i = 0; i < 15; i++) {
-          createHeart(container);
-        }
-      }
-
-      function createHeart(container) {
-        const heart = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        heart.setAttribute("viewBox", "0 0 100 100");
-        heart.style.width = "30px";
-        heart.style.height = "30px";
-        heart.style.position = "absolute";
-        heart.style.left = Math.random() * 100 + "%";
-        heart.style.animation = `float ${3 + Math.random() * 3}s linear infinite`;
-
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", "M50 88.9L16.7 55.6C7.2 46.1 7.2 30.9 16.7 21.4s24.7-9.5 34.2 0L50 20.5l-0.9 0.9c9.5-9.5 24.7-9.5 34.2 0s9.5 24.7 0 34.2L50 88.9z");
-        path.style.fill = `hsl(${Math.random() * 60 + 330}, 100%, 65%)`;
-
-        heart.appendChild(path);
-        container.appendChild(heart);
-
-        setTimeout(() => {
-          container.removeChild(heart);
-        }, 6000);
-      }
+        // Add click animation to cards
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (!this.querySelector('.feature-card-btn').disabled) {
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                }
+            });
+        });
     </script>
-  </body>
+</body>
 </html>
-
-
 

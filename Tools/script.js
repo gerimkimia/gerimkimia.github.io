@@ -1,3 +1,39 @@
+// Custom Alert Function
+function showCustomAlert(message, title = 'Peringatan') {
+    const overlay = document.getElementById('custom-alert-overlay');
+    const messageEl = document.querySelector('.custom-alert-message');
+    const titleEl = document.querySelector('.custom-alert-title');
+    
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    
+    overlay.classList.add('show');
+}
+
+function closeCustomAlert() {
+    const overlay = document.getElementById('custom-alert-overlay');
+    overlay.classList.remove('show');
+}
+
+// Setup event listeners for custom alert (only once)
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('custom-alert-overlay');
+    
+    // Close on overlay click
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            closeCustomAlert();
+        }
+    });
+    
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && overlay.classList.contains('show')) {
+            closeCustomAlert();
+        }
+    });
+});
+
 // Chemistry Calculator Class
 class ChemistryCalculator {
     constructor() {
@@ -455,7 +491,7 @@ function calculateMr() {
     try {
         const formula = document.getElementById('mr-formula').value.trim();
         if (!formula) {
-            alert('Masukkan rumus kimia!');
+            showCustomAlert('Masukkan rumus kimia!');
             return;
         }
         
@@ -488,7 +524,7 @@ function calculateMolMassa() {
         const type = document.getElementById('mol-massa-type').value;
         const formula = document.getElementById('mol-massa-formula').value.trim();
         if (!formula) {
-            alert('Masukkan rumus kimia!');
+            showCustomAlert('Masukkan rumus kimia!');
             return;
         }
         
@@ -498,7 +534,7 @@ function calculateMolMassa() {
         if (type === 'mol-to-mass') {
             const mol = parseFloat(document.getElementById('mol-value').value);
             if (isNaN(mol)) {
-                alert('Masukkan jumlah mol yang valid!');
+                showCustomAlert('Masukkan jumlah mol yang valid!');
                 return;
             }
             result = calc.mass_from_mol(mol, mr, formula);
@@ -517,7 +553,7 @@ function calculateMolMassa() {
         } else {
             const mass = parseFloat(document.getElementById('mass-value').value);
             if (isNaN(mass)) {
-                alert('Masukkan massa yang valid!');
+                showCustomAlert('Masukkan massa yang valid!');
                 return;
             }
             result = calc.mol_from_mass(mass, mr, formula);
@@ -551,7 +587,7 @@ function calculateMolPartikel() {
         if (type === 'mol-to-particles') {
             const mol = parseFloat(document.getElementById('mol-partikel-value').value);
             if (isNaN(mol)) {
-                alert('Masukkan jumlah mol yang valid!');
+                showCustomAlert('Masukkan jumlah mol yang valid!');
                 return;
             }
             result = calc.particles_from_mol(mol);
@@ -570,7 +606,7 @@ function calculateMolPartikel() {
         } else {
             const particles = parseFloat(document.getElementById('particles-value').value);
             if (isNaN(particles)) {
-                alert('Masukkan jumlah partikel yang valid!');
+                showCustomAlert('Masukkan jumlah partikel yang valid!');
                 return;
             }
             result = calc.mol_from_particles(particles);
@@ -604,7 +640,7 @@ function calculateStp() {
         if (type === 'mol-to-volume') {
             const mol = parseFloat(document.getElementById('stp-mol-value').value);
             if (isNaN(mol)) {
-                alert('Masukkan jumlah mol yang valid!');
+                showCustomAlert('Masukkan jumlah mol yang valid!');
                 return;
             }
             result = calc.volume_gas_stp(mol);
@@ -623,7 +659,7 @@ function calculateStp() {
         } else {
             const volume = parseFloat(document.getElementById('stp-volume-value').value);
             if (isNaN(volume)) {
-                alert('Masukkan volume yang valid!');
+                showCustomAlert('Masukkan volume yang valid!');
                 return;
             }
             result = calc.mol_from_volume_stp(volume);
@@ -1473,7 +1509,7 @@ function calculateIdealGas() {
         
         const count = [P, V, n, T].filter(x => x !== null).length;
         if (count !== 3) {
-            alert('Masukkan tepat 3 dari 4 variabel!');
+            showCustomAlert('Masukkan tepat 3 dari 4 variabel!');
             return;
         }
         
@@ -1520,7 +1556,7 @@ function calculateCombinedGas() {
             
             const count = [P1, V1, T1, P2, V2, T2].filter(x => x !== null).length;
             if (count !== 5) {
-                alert('Masukkan tepat 5 dari 6 variabel!');
+                showCustomAlert('Masukkan tepat 5 dari 6 variabel!');
                 return;
             }
             
@@ -1541,7 +1577,7 @@ function calculateCombinedGas() {
             
             const count = [P1, V1, P2, V2].filter(x => x !== null).length;
             if (count !== 3) {
-                alert('Masukkan tepat 3 dari 4 variabel!');
+                showCustomAlert('Masukkan tepat 3 dari 4 variabel!');
                 return;
             }
             
@@ -1560,7 +1596,7 @@ function calculateCombinedGas() {
             
             const count = [V1, T1, V2, T2].filter(x => x !== null).length;
             if (count !== 3) {
-                alert('Masukkan tepat 3 dari 4 variabel!');
+                showCustomAlert('Masukkan tepat 3 dari 4 variabel!');
                 return;
             }
             
@@ -1579,7 +1615,7 @@ function calculateCombinedGas() {
             
             const count = [P1, T1, P2, T2].filter(x => x !== null).length;
             if (count !== 3) {
-                alert('Masukkan tepat 3 dari 4 variabel!');
+                showCustomAlert('Masukkan tepat 3 dari 4 variabel!');
                 return;
             }
             
@@ -1619,7 +1655,7 @@ function calculateMolarity() {
         
         const count = [mol, volume, M].filter(x => x !== null).length;
         if (count !== 2) {
-            alert('Masukkan tepat 2 dari 3 variabel!');
+            showCustomAlert('Masukkan tepat 2 dari 3 variabel!');
             return;
         }
         
@@ -1659,7 +1695,7 @@ function calculateDilution() {
         
         const count = [M1, V1, M2, V2].filter(x => x !== null).length;
         if (count !== 3) {
-            alert('Masukkan tepat 3 dari 4 variabel!');
+            showCustomAlert('Masukkan tepat 3 dari 4 variabel!');
             return;
         }
         
@@ -1697,7 +1733,7 @@ function calculateMassPercent() {
         const mass_larutan = parseFloat(document.getElementById('mass-percent-larutan').value);
         
         if (isNaN(mass_zat) || isNaN(mass_larutan)) {
-            alert('Masukkan nilai yang valid!');
+            showCustomAlert('Masukkan nilai yang valid!');
             return;
         }
         
@@ -1732,7 +1768,7 @@ function calculateStoichiometry() {
         const coef_product = parseInt(document.getElementById('stoich-coef-product').value);
         
         if (!reactant_name || !product_name || isNaN(mol_reactant) || isNaN(coef_reactant) || isNaN(coef_product)) {
-            alert('Lengkapi semua field!');
+            showCustomAlert('Lengkapi semua field!');
             return;
         }
         
@@ -1768,7 +1804,7 @@ function calculateLimiting() {
         const coef_B = parseInt(document.getElementById('limiting-coef-B').value);
         
         if (!name_A || !name_B || isNaN(mol_A) || isNaN(coef_A) || isNaN(mol_B) || isNaN(coef_B)) {
-            alert('Lengkapi semua field!');
+            showCustomAlert('Lengkapi semua field!');
             return;
         }
         
