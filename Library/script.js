@@ -1971,6 +1971,9 @@ if (document.getElementById('chatMessages')) {
     let isTyping = false;
     let typingController = null;
     let currentTypingPromise = null;
+    let typingConversationId = null; // Track which conversation is currently typing
+    let requestConversationId = null; // Track which conversation initiated the AI request
+    let requestChatMessages = null; // Track the chatMessages element when request started
 
     // DOM Elements
     const chatMessages = document.getElementById('chatMessages');
@@ -2184,6 +2187,15 @@ if (document.getElementById('chatMessages')) {
 
     // Create new conversation
     window.createNewConversation = function() {
+        // Stop any ongoing typing animation when creating new conversation
+        if (isTyping) {
+            stopTyping();
+        }
+        
+        // Clear request conversation ID and chatMessages reference to prevent messages from old requests
+        requestConversationId = null;
+        requestChatMessages = null;
+        
         // Save current conversation if it has messages
         if (chatHistory.length > 1 && currentConversationId) {
             saveCurrentConversationSilent();
@@ -2229,6 +2241,15 @@ if (document.getElementById('chatMessages')) {
             setTimeout(() => loadConversation(conversationId), 100);
             return;
         }
+        
+        // Stop any ongoing typing animation when switching conversations
+        if (isTyping) {
+            stopTyping();
+        }
+        
+        // Clear request conversation ID and chatMessages reference to prevent messages from old requests
+        requestConversationId = null;
+        requestChatMessages = null;
         
         const conversation = conversations.find(c => c.id === conversationId);
         if (!conversation) return;
@@ -2769,6 +2790,7 @@ if (document.getElementById('chatMessages')) {
     // Stop typing animation
     window.stopTyping = function() {
         isTyping = false;
+        typingConversationId = null; // Clear typing conversation ID
         if (typingController) {
             typingController.abort();
             typingController = null;
@@ -2809,6 +2831,8 @@ if (document.getElementById('chatMessages')) {
 
     // Typing animation with stop support
     async function typeMessage(fullText, contentElement) {
+        // Store the conversation ID when starting to type
+        typingConversationId = currentConversationId;
         isTyping = true;
         typingController = new AbortController();
         showStopButton();
@@ -2972,12 +2996,34 @@ if (document.getElementById('chatMessages')) {
         
         isTyping = false;
         typingController = null;
+        typingConversationId = null; // Clear typing conversation ID when done
         hideStopButton();
         scrollToBottom();
     }
 
     // Add message to chat
     async function addMessage(text, isUser, animate = false, skipHistory = false) {
+        // If this is an AI message, check if conversation hasn't changed
+        if (!isUser) {
+            // Check both typingConversationId (for typing animation) and requestConversationId (for API request)
+            if (animate && typingConversationId !== null && typingConversationId !== currentConversationId) {
+                // Conversation changed during typing, don't add this message
+                console.log('Conversation changed during typing, ignoring message');
+                return;
+            }
+            if (requestConversationId !== null && requestConversationId !== currentConversationId) {
+                // Conversation changed during API request, don't add this message
+                console.log('Conversation changed during API request, ignoring message');
+                return;
+            }
+            // Also check if chatMessages element is still the same (in case it was cleared)
+            if (requestChatMessages !== null && requestChatMessages !== chatMessages) {
+                // chatMessages was replaced (conversation switched), don't add this message
+                console.log('chatMessages element changed, ignoring message');
+                return;
+            }
+        }
+        
         if (welcomeMessage && welcomeMessage.parentNode) {
             welcomeMessage.remove();
         }
@@ -2994,6 +3040,24 @@ if (document.getElementById('chatMessages')) {
         
         messageDiv.appendChild(avatar);
         messageDiv.appendChild(content);
+        
+        // Double check before appending - if this is an AI message with animation, verify conversation is still valid
+        if (!isUser && animate) {
+            // If requestConversationId is null, it means conversation was switched during request, don't add message
+            if (requestConversationId === null) {
+                console.log('Request conversation ID is null (conversation was switched), aborting');
+                return;
+            }
+            if (requestConversationId !== currentConversationId) {
+                console.log('Conversation changed before appending message, aborting');
+                return;
+            }
+            if (requestChatMessages !== null && requestChatMessages !== chatMessages) {
+                console.log('chatMessages changed before appending message, aborting');
+                return;
+            }
+        }
+        
         chatMessages.appendChild(messageDiv);
 
         if (isUser) {
@@ -3025,13 +3089,20 @@ if (document.getElementById('chatMessages')) {
                 renderCodeBlocks(content, codeBlocks);
             }
             // Add AI message to chatHistory if not already added and not skipping
+            // Also check if conversation hasn't changed during typing or API request
             if (!skipHistory) {
-                const lastMessage = chatHistory[chatHistory.length - 1];
-                if (!lastMessage || lastMessage.content !== text || lastMessage.role !== 'assistant') {
-                    chatHistory.push({
-                        role: 'assistant',
-                        content: text
-                    });
+                const conversationStillValid = 
+                    (typingConversationId === null || typingConversationId === currentConversationId) &&
+                    (requestConversationId === null || requestConversationId === currentConversationId);
+                
+                if (conversationStillValid) {
+                    const lastMessage = chatHistory[chatHistory.length - 1];
+                    if (!lastMessage || lastMessage.content !== text || lastMessage.role !== 'assistant') {
+                        chatHistory.push({
+                            role: 'assistant',
+                            content: text
+                        });
+                    }
                 }
             }
             scrollToBottom();
@@ -3197,6 +3268,10 @@ if (document.getElementById('chatMessages')) {
                 throw new Error('Chat history tidak lengkap. Silakan coba lagi.');
             }
 
+            // Save the conversation ID and chatMessages reference at the start of the request
+            requestConversationId = currentConversationId;
+            requestChatMessages = chatMessages; // Store reference to chatMessages element
+            
             // Show typing indicator
             showTyping();
 
@@ -3204,12 +3279,26 @@ if (document.getElementById('chatMessages')) {
             const aiResponse = await getAIResponse(message);
             hideTyping();
             
-            // Add AI message with typing animation
-            await addMessage(aiResponse, false, true);
+            // Only add AI message if conversation hasn't changed
+            if (requestConversationId === currentConversationId && requestChatMessages === chatMessages) {
+                // Add AI message with typing animation
+                await addMessage(aiResponse, false, true);
+            } else {
+                console.log('Conversation changed during AI request, ignoring response');
+            }
+            
+            // Clear request conversation ID and chatMessages reference
+            requestConversationId = null;
+            requestChatMessages = null;
         } catch (error) {
             hideTyping();
             console.error('Error in handleSendMessage:', error);
-            await addMessage(`Maaf, terjadi kesalahan: ${error.message}`, false, true);
+            // Only add error message if conversation hasn't changed
+            if (requestConversationId === currentConversationId && requestChatMessages === chatMessages) {
+                await addMessage(`Maaf, terjadi kesalahan: ${error.message}`, false, true);
+            }
+            requestConversationId = null;
+            requestChatMessages = null;
         } finally {
             // Re-enable input
             if (chatInputEl) chatInputEl.disabled = false;
