@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Leaa - Chat Assistant</title>
+    <link rel="icon" href="../icon.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../Library/style.css">
+    <style>
+        /* Only page-specific styles that can't be in external CSS */
+        body {
+            overflow: hidden;
+        }
+        body.aileaa-page {
+            padding: 0;
+            height: 100vh;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="aileaa-page">
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    
+    <div class="main-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="bi bi-chat-dots"></i> Percakapan</h3>
+                <button class="new-chat-btn" onclick="createNewConversation()">
+                    <i class="bi bi-plus-circle"></i> Percakapan Baru
+                </button>
+            </div>
+            <div class="conversations-list" id="conversationsList">
+                <div class="empty-conversations">
+                    <i class="bi bi-inbox"></i>
+                    <p>Belum ada percakapan</p>
+                    <p style="font-size: 0.85rem; margin-top: 10px;">Klik "Percakapan Baru" untuk memulai</p>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <a href="../index.html" class="back-btn">
+                    <i class="bi bi-arrow-left"></i> Kembali
+                </a>
+            </div>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1>
+                    <i class="bi bi-robot"></i> AI Leaa
+                </h1>
+                <span id="currentConversationName" style="font-size: 0.9rem; opacity: 0.9; font-weight: 400;">Percakapan Baru</span>
+            </div>
+            <div class="chat-header-actions">
+                <button class="clear-btn" onclick="showSaveModal()" title="Simpan percakapan">
+                    <i class="bi bi-save"></i> Simpan
+                </button>
+                <button class="clear-btn" onclick="resetChatHistory()" title="Hapus riwayat chat">
+                    <i class="bi bi-trash"></i> Hapus
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <i class="bi bi-chat-heart-fill"></i>
+                <h3>Halo! Saya AI Leaa</h3>
+                <p>Saya di sini untuk membantu kamu. Tanyakan apa saja yang ingin kamu ketahui! 💕</p>
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input-container">
+            <form class="chat-input-form" id="chatForm" onsubmit="event.preventDefault(); return false;">
+                <textarea 
+                    class="chat-input" 
+                    id="chatInput" 
+                    placeholder="Tulis pesan kamu di sini..."
+                    rows="1"
+                ></textarea>
+                <button type="submit" class="send-btn" id="sendBtn">
+                    <i class="bi bi-send-fill"></i> Kirim
+                </button>
+                <button type="button" class="stop-btn" id="stopBtn" onclick="stopTyping()" style="display: none;">
+                    <i class="bi bi-stop-fill"></i> Stop
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Save Conversation Modal -->
+    <div class="modal-overlay" id="saveModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="bi bi-save"></i> Simpan Percakapan</h3>
+            </div>
+            <input 
+                type="text" 
+                class="modal-input" 
+                id="conversationNameInput" 
+                placeholder="Masukkan nama percakapan..."
+                maxlength="50"
+            >
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" onclick="closeSaveModal()">Batal</button>
+                <button class="modal-btn modal-btn-primary" onclick="saveCurrentConversation()">Simpan</button>
+            </div>
+        </div>
+    </div>
+    <script src="../Library/script.js"></script>
+</body>
+</html>
+

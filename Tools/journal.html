@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pencarian Jurnal - Leaa ❤️</title>
+    <link rel="icon" href="../icon.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../Library/style.css">
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="../index.html" class="back-btn">
+        <i class="bi bi-arrow-left"></i> Kembali
+    </a>
+
+    <!-- Header -->
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="header-section text-center py-4 mb-4">
+                    <h1 class="display-4 fw-bold">PENCARIAN JURNAL</h1>
+                    <p class="lead">Cari jurnal ilmiah untuk membantu kamu menyelesaikan laporan</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Container -->
+    <div class="search-container">
+        <div class="search-card">
+            <form class="search-form" id="searchForm" onsubmit="handleSearch(event)">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchInput" 
+                    placeholder="Masukkan kata kunci jurnal yang ingin dicari..."
+                    required
+                >
+                <button type="submit" class="search-btn">
+                    <i class="bi bi-search"></i> Cari
+                </button>
+            </form>
+
+            <div class="database-selection">
+                <button class="database-btn active" data-db="scholar" onclick="selectDatabase('scholar')">
+                    <i class="bi bi-google"></i> Google Scholar
+                </button>
+                <button class="database-btn" data-db="pubmed" onclick="selectDatabase('pubmed')">
+                    <i class="bi bi-book"></i> PubMed
+                </button>
+                <button class="database-btn" data-db="ieee" onclick="selectDatabase('ieee')">
+                    <i class="bi bi-cpu"></i> IEEE Xplore
+                </button>
+                <button class="database-btn" data-db="springer" onclick="selectDatabase('springer')">
+                    <i class="bi bi-journal"></i> Springer
+                </button>
+            </div>
+
+            <div class="quick-links">
+                <a href="https://scholar.google.com" target="_blank" class="quick-link-card">
+                    <i class="bi bi-google quick-link-icon"></i>
+                    <div class="quick-link-title">Google Scholar</div>
+                </a>
+                <a href="https://pubmed.ncbi.nlm.nih.gov" target="_blank" class="quick-link-card">
+                    <i class="bi bi-book quick-link-icon"></i>
+                    <div class="quick-link-title">PubMed</div>
+                </a>
+                <a href="https://ieeexplore.ieee.org" target="_blank" class="quick-link-card">
+                    <i class="bi bi-cpu quick-link-icon"></i>
+                    <div class="quick-link-title">IEEE Xplore</div>
+                </a>
+                <a href="https://link.springer.com" target="_blank" class="quick-link-card">
+                    <i class="bi bi-journal quick-link-icon"></i>
+                    <div class="quick-link-title">Springer</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Container -->
+    <div class="results-container" id="resultsContainer">
+        <div class="no-results" id="noResults">
+            <i class="bi bi-search"></i>
+            <h4>Mulai pencarian jurnal</h4>
+            <p>Masukkan kata kunci di atas untuk mencari jurnal ilmiah</p>
+        </div>
+    </div>
+    <script src="../Library/script.js"></script>
+</body>
+</html>
+

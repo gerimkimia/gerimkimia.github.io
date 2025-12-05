@@ -19,19 +19,22 @@ function closeCustomAlert() {
 document.addEventListener('DOMContentLoaded', function() {
     const overlay = document.getElementById('custom-alert-overlay');
     
-    // Close on overlay click
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
-            closeCustomAlert();
-        }
-    });
-    
-    // Close on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && overlay.classList.contains('show')) {
-            closeCustomAlert();
-        }
-    });
+    // Only add listeners if overlay exists (not all pages have custom alert)
+    if (overlay) {
+        // Close on overlay click
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                closeCustomAlert();
+            }
+        });
+        
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && overlay.classList.contains('show')) {
+                closeCustomAlert();
+            }
+        });
+    }
 });
 
 // Chemistry Calculator Class
@@ -1834,4 +1837,1407 @@ function calculateLimiting() {
 document.addEventListener('DOMContentLoaded', function() {
     // Event listener akan dipanggil saat menu ditampilkan
 });
+
+let selectedDatabase = 'scholar';
+
+function selectDatabase(db) {
+    selectedDatabase = db;
+    document.querySelectorAll('.database-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-db="${db}"]`).classList.add('active');
+}
+
+function handleSearch(event) {
+    event.preventDefault();
+    const query = document.getElementById('searchInput').value.trim();
+    
+    if (!query) {
+        return;
+    }
+
+    // Show loading
+    document.getElementById('resultsContainer').innerHTML = `
+        <div class="loading">
+            <i class="bi bi-arrow-repeat"></i>
+            <p style="margin-top: 15px;">Mencari jurnal...</p>
+        </div>
+    `;
+
+    // Redirect to search engine based on selected database
+    setTimeout(() => {
+        let searchUrl = '';
+        
+        switch(selectedDatabase) {
+            case 'scholar':
+                searchUrl = `https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`;
+                break;
+            case 'pubmed':
+                searchUrl = `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(query)}`;
+                break;
+            case 'ieee':
+                searchUrl = `https://ieeexplore.ieee.org/search/searchresult.jsp?queryText=${encodeURIComponent(query)}`;
+                break;
+            case 'springer':
+                searchUrl = `https://link.springer.com/search?query=${encodeURIComponent(query)}`;
+                break;
+            default:
+                searchUrl = `https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`;
+        }
+
+        // Show results with link
+        document.getElementById('resultsContainer').innerHTML = `
+            <div class="result-card">
+                <div class="result-title">
+                    <i class="bi bi-check-circle-fill" style="color: #28a745;"></i> Pencarian Siap!
+                </div>
+                <p style="margin: 20px 0; color: #666;">
+                    Klik tombol di bawah untuk membuka hasil pencarian di ${getDatabaseName(selectedDatabase)}:
+                </p>
+                <a href="${searchUrl}" target="_blank" class="search-btn" style="display: inline-block; text-decoration: none;">
+                    <i class="bi bi-box-arrow-up-right"></i> Buka Hasil Pencarian
+                </a>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                    <p style="color: #888; font-size: 0.9rem;">
+                        <i class="bi bi-info-circle"></i> 
+                        Tips: Gunakan kata kunci yang spesifik untuk hasil yang lebih akurat. 
+                        Contoh: "machine learning" AND "neural network" untuk mencari jurnal yang mengandung kedua istilah tersebut.
+                    </p>
+                </div>
+            </div>
+        `;
+    }, 1000);
+}
+
+function getDatabaseName(db) {
+    const names = {
+        'scholar': 'Google Scholar',
+        'pubmed': 'PubMed',
+        'ieee': 'IEEE Xplore',
+        'springer': 'Springer'
+    };
+    return names[db] || 'Google Scholar';
+}
+
+// Allow Enter key to search
+// document.getElementById('searchInput').addEventListener('keypress', function(e) {
+//     if (e.key === 'Enter') {
+//         handleSearch(e);
+//     }
+// });
+
+// ============================================
+// AI LEAA CHAT FUNCTIONALITY
+// ============================================
+
+// Only initialize if we're on the AI Leaa page
+if (document.getElementById('chatMessages')) {
+    // ============================================
+    // KONFIGURASI API AI
+    // ============================================
+    const API_CONFIG = {
+        // Pilih provider: 'openai' atau 'gemini'
+        provider: 'gemini',
+        
+        // OpenAI Configuration
+        openai: {
+            apiKey: 'YOUR_OPENAI_API_KEY_HERE',
+            model: 'gpt-3.5-turbo',
+            endpoint: 'https://api.openai.com/v1/chat/completions'
+        },
+        
+        // Google Gemini Configuration
+        gemini: {
+            apiKey: 'AIzaSyCWCG9gR05IMdHuJ0QFKS8tshjALXdVgRs',
+            model: 'gemini-2.0-flash',
+            endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+        }
+    };
+
+    // Chat history untuk context
+    let chatHistory = [
+        {
+            role: 'system',
+            content: 'Kamu adalah AI Leaa, asisten AI yang ramah dan membantu. Kamu dibuat khusus untuk membantu Leaa dengan berbagai pertanyaan. Jawab dengan ramah, jelas, dan dalam bahasa Indonesia.'
+        }
+    ];
+
+    // Current conversation ID
+    let currentConversationId = null;
+    let conversations = [];
+    let isSaving = false; // Flag to prevent race condition
+
+    // Variables for stop functionality
+    let isTyping = false;
+    let typingController = null;
+    let currentTypingPromise = null;
+
+    // DOM Elements
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const chatForm = document.getElementById('chatForm');
+    const sendBtn = document.getElementById('sendBtn');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const welcomeMessage = document.querySelector('.welcome-message');
+
+    // Load all conversations from localStorage
+    function loadConversations() {
+        try {
+            const saved = localStorage.getItem('aileaa_conversations');
+            if (saved) {
+                conversations = JSON.parse(saved);
+                renderConversationsList();
+            }
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+            conversations = [];
+        }
+    }
+
+    // Save all conversations to localStorage
+    function saveConversations() {
+        try {
+            localStorage.setItem('aileaa_conversations', JSON.stringify(conversations));
+        } catch (error) {
+            console.error('Error saving conversations:', error);
+        }
+    }
+
+    // Generate unique conversation ID
+    function generateConversationId() {
+        return 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Save chat history to current conversation
+    function saveChatHistory() {
+        if (isSaving) return; // Prevent race condition
+        isSaving = true;
+        
+        try {
+            // Deep copy chatHistory to prevent reference sharing
+            const historyCopy = JSON.parse(JSON.stringify(chatHistory));
+            
+            if (currentConversationId) {
+                const index = conversations.findIndex(c => c.id === currentConversationId);
+                if (index !== -1) {
+                    conversations[index].history = historyCopy;
+                    conversations[index].updatedAt = new Date().toISOString();
+                    saveConversations();
+                }
+            } else if (chatHistory.length > 1) {
+                // Auto-save to new conversation if there are messages
+                const newId = generateConversationId();
+                conversations.push({
+                    id: newId,
+                    name: 'Percakapan Baru',
+                    history: historyCopy,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                });
+                currentConversationId = newId;
+                saveConversations();
+                renderConversationsList();
+                
+                // Auto-generate title after first few messages
+                if (chatHistory.length >= 3) {
+                    generateConversationTitle(newId);
+                }
+            }
+        } finally {
+            isSaving = false;
+        }
+    }
+
+    // Generate conversation title using AI
+    async function generateConversationTitle(conversationId) {
+        try {
+            // Get first few user messages for context
+            const userMessages = chatHistory
+                .filter(msg => msg.role === 'user')
+                .slice(0, 3)
+                .map(msg => msg.content)
+                .join('\n');
+            
+            if (!userMessages || userMessages.length < 10) return; // Too short
+            
+            // Create a prompt for title generation
+            const titlePrompt = `Berdasarkan percakapan berikut, buatkan judul yang singkat dan deskriptif (maksimal 5 kata) dalam bahasa Indonesia:\n\n${userMessages}\n\nJudul:`;
+            
+            // Use AI to generate title
+            const tempHistory = [
+                { role: 'system', content: 'Kamu adalah asisten yang membantu membuat judul percakapan. Jawab hanya dengan judul saja, tanpa penjelasan tambahan.' },
+                { role: 'user', content: titlePrompt }
+            ];
+            
+            let title = 'Percakapan Baru';
+            
+            if (API_CONFIG.provider === 'openai' && API_CONFIG.openai.apiKey && API_CONFIG.openai.apiKey !== 'YOUR_OPENAI_API_KEY_HERE') {
+                const response = await fetch(API_CONFIG.openai.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.openai.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: API_CONFIG.openai.model,
+                        messages: tempHistory,
+                        temperature: 0.7,
+                        max_tokens: 20
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    title = data.choices[0].message.content.trim();
+                }
+            } else if (API_CONFIG.provider === 'gemini' && API_CONFIG.gemini.apiKey && API_CONFIG.gemini.apiKey !== 'YOUR_GEMINI_API_KEY_HERE') {
+                const url = `${API_CONFIG.gemini.endpoint}?key=${API_CONFIG.gemini.apiKey}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            role: 'user',
+                            parts: [{ text: titlePrompt }]
+                        }]
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    title = data.candidates[0].content.parts[0].text.trim();
+                }
+            }
+            
+            // Clean title: remove markdown, quotes, and extra whitespace
+            title = title
+                .replace(/\*\*/g, '') // Remove bold markdown **
+                .replace(/\*/g, '') // Remove italic markdown *
+                .replace(/`/g, '') // Remove code markdown `
+                .replace(/["']/g, '') // Remove quotes
+                .replace(/^#+\s*/, '') // Remove markdown headers
+                .replace(/\n.*/g, '') // Remove everything after first line
+                .trim();
+            
+            // Limit to 5 words max
+            const words = title.split(/\s+/);
+            if (words.length > 5) {
+                title = words.slice(0, 5).join(' ');
+            }
+            
+            // Fallback if title is empty or too short
+            if (!title || title.length < 2) {
+                title = 'Percakapan Baru';
+            }
+            
+            // Update conversation title
+            const index = conversations.findIndex(c => c.id === conversationId);
+            if (index !== -1) {
+                conversations[index].name = title;
+                saveConversations();
+                renderConversationsList();
+                
+                // Update UI if this is the current conversation
+                if (currentConversationId === conversationId) {
+                    const nameEl = document.getElementById('currentConversationName');
+                    if (nameEl) nameEl.textContent = title;
+                }
+            }
+        } catch (error) {
+            console.error('Error generating title:', error);
+            // Silently fail, keep default title
+        }
+    }
+
+    // Render conversations list
+    function renderConversationsList() {
+        const list = document.getElementById('conversationsList');
+        if (!list) return;
+        
+        if (conversations.length === 0) {
+            list.innerHTML = `
+                <div class="empty-conversations">
+                    <i class="bi bi-inbox"></i>
+                    <p>Belum ada percakapan</p>
+                    <p style="font-size: 0.85rem; margin-top: 10px;">Klik "Percakapan Baru" untuk memulai</p>
+                </div>
+            `;
+            return;
+        }
+
+        list.innerHTML = conversations.map(conv => {
+            const safeId = conv.id.replace(/'/g, "\\'");
+            const safeName = escapeHtml(conv.name);
+            return `
+            <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}" 
+                 onclick="loadConversation('${safeId}')">
+                <div class="conversation-name" title="${safeName}">${safeName}</div>
+                <div class="conversation-actions" onclick="event.stopPropagation()">
+                    <button class="conversation-action-btn" onclick="deleteConversation('${safeId}')" title="Hapus">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        }).join('');
+    }
+
+    // Create new conversation
+    window.createNewConversation = function() {
+        // Save current conversation if it has messages
+        if (chatHistory.length > 1 && currentConversationId) {
+            saveCurrentConversationSilent();
+        }
+
+        // Reset to new conversation
+        currentConversationId = null;
+        chatHistory = [
+            {
+                role: 'system',
+                content: 'Kamu adalah AI Leaa, asisten AI yang ramah dan membantu. Kamu dibuat khusus untuk membantu Leaa dengan berbagai pertanyaan. Jawab dengan ramah, jelas, dan dalam bahasa Indonesia.'
+            }
+        ];
+
+        // Clear UI
+        chatMessages.innerHTML = '';
+        const welcomeMsg = document.createElement('div');
+        welcomeMsg.className = 'welcome-message';
+        welcomeMsg.innerHTML = `
+            <i class="bi bi-chat-heart-fill"></i>
+            <h3>Halo! Saya AI Leaa</h3>
+            <p>Saya di sini untuk membantu kamu. Tanyakan apa saja yang ingin kamu ketahui! 💕</p>
+        `;
+        chatMessages.appendChild(welcomeMsg);
+
+        const nameEl = document.getElementById('currentConversationName');
+        if (nameEl) nameEl.textContent = 'Percakapan Baru';
+        renderConversationsList();
+        
+        // Close sidebar on mobile
+        if (window.innerWidth <= 768) {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar) sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('active');
+        }
+    };
+
+    // Load conversation
+    window.loadConversation = function(conversationId) {
+        if (isSaving) {
+            // Wait a bit if saving is in progress
+            setTimeout(() => loadConversation(conversationId), 100);
+            return;
+        }
+        
+        const conversation = conversations.find(c => c.id === conversationId);
+        if (!conversation) return;
+
+        // Save current conversation if it has messages
+        if (chatHistory.length > 1 && currentConversationId && currentConversationId !== conversationId) {
+            saveCurrentConversationSilent();
+        }
+
+        currentConversationId = conversationId;
+        // Deep copy to prevent reference sharing
+        chatHistory = JSON.parse(JSON.stringify(conversation.history));
+
+        // Clear and render messages
+        chatMessages.innerHTML = '';
+        const welcomeMsg = document.querySelector('.welcome-message');
+        if (welcomeMsg) welcomeMsg.remove();
+
+        // Display all messages except system message (with skipHistory flag to prevent adding to chatHistory)
+        chatHistory.slice(1).forEach(msg => {
+            addMessage(msg.content, msg.role === 'user', false, true); // true = skipHistory
+        });
+
+        const nameEl = document.getElementById('currentConversationName');
+        if (nameEl) nameEl.textContent = conversation.name;
+        renderConversationsList();
+        
+        // Close sidebar on mobile
+        if (window.innerWidth <= 768) {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar) sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('active');
+        }
+    };
+
+    // Save current conversation
+    function saveCurrentConversationSilent() {
+        if (isSaving || chatHistory.length <= 1) return;
+        isSaving = true;
+        
+        try {
+            // Deep copy to prevent reference sharing
+            const historyCopy = JSON.parse(JSON.stringify(chatHistory));
+            
+            const name = currentConversationId 
+                ? conversations.find(c => c.id === currentConversationId)?.name || 'Percakapan'
+                : 'Percakapan Baru';
+
+            if (currentConversationId) {
+                const index = conversations.findIndex(c => c.id === currentConversationId);
+                if (index !== -1) {
+                    conversations[index].history = historyCopy;
+                    conversations[index].updatedAt = new Date().toISOString();
+                }
+            } else {
+                const newId = generateConversationId();
+                conversations.push({
+                    id: newId,
+                    name: name,
+                    history: historyCopy,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                });
+                currentConversationId = newId;
+            }
+
+            saveConversations();
+        } finally {
+            isSaving = false;
+        }
+    }
+
+    // Show save modal
+    // Custom confirm function
+    function showCustomConfirm(message, title = 'Konfirmasi', onConfirm, onCancel) {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-alert-overlay';
+        overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+        
+        const alertBox = document.createElement('div');
+        alertBox.className = 'custom-alert';
+        alertBox.style.cssText = 'background: white; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);';
+        alertBox.innerHTML = `
+            <h3 style="margin: 0 0 15px 0; color: #ff4b6e; font-size: 1.3rem;">${title}</h3>
+            <p style="margin: 0 0 20px 0; color: #333; line-height: 1.6;">${message}</p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="custom-alert-btn-cancel" style="padding: 10px 20px; border: 2px solid #e0e0e0; background: white; border-radius: 8px; cursor: pointer; font-weight: 600; color: #666;">Batal</button>
+                <button class="custom-alert-btn-confirm" style="padding: 10px 20px; border: none; background: #ff4b6e; color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">Ya</button>
+            </div>
+        `;
+        
+        overlay.appendChild(alertBox);
+        document.body.appendChild(overlay);
+        
+        const closeAlert = () => {
+            document.body.removeChild(overlay);
+        };
+        
+        alertBox.querySelector('.custom-alert-btn-confirm').onclick = () => {
+            closeAlert();
+            if (onConfirm) onConfirm();
+        };
+        
+        alertBox.querySelector('.custom-alert-btn-cancel').onclick = () => {
+            closeAlert();
+            if (onCancel) onCancel();
+        };
+        
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                closeAlert();
+                if (onCancel) onCancel();
+            }
+        };
+    }
+
+    window.showSaveModal = function() {
+        if (chatHistory.length <= 1) {
+            showCustomAlert('Tidak ada pesan untuk disimpan!', 'Peringatan');
+            return;
+        }
+
+        const modal = document.getElementById('saveModal');
+        const input = document.getElementById('conversationNameInput');
+        if (!modal || !input) return;
+        
+        if (currentConversationId) {
+            const conv = conversations.find(c => c.id === currentConversationId);
+            input.value = conv ? conv.name : '';
+        } else {
+            input.value = '';
+        }
+
+        modal.classList.add('show');
+        input.focus();
+
+        // Close on overlay click
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeSaveModal();
+            }
+        });
+
+        // Enter key to save
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                saveCurrentConversation();
+            }
+        });
+    };
+
+    // Close save modal
+    window.closeSaveModal = function() {
+        const modal = document.getElementById('saveModal');
+        const input = document.getElementById('conversationNameInput');
+        if (modal) modal.classList.remove('show');
+        if (input) input.value = '';
+    };
+
+    // Save current conversation with name
+    window.saveCurrentConversation = function() {
+        const input = document.getElementById('conversationNameInput');
+        if (!input) return;
+        
+        const name = input.value.trim();
+        if (!name) {
+            showCustomAlert('Masukkan nama percakapan!', 'Peringatan');
+            return;
+        }
+
+        if (chatHistory.length <= 1) {
+            showCustomAlert('Tidak ada pesan untuk disimpan!', 'Peringatan');
+            return;
+        }
+
+        if (currentConversationId) {
+            const index = conversations.findIndex(c => c.id === currentConversationId);
+            if (index !== -1) {
+                // Deep copy to prevent reference sharing
+                const historyCopy = JSON.parse(JSON.stringify(chatHistory));
+                conversations[index].name = name;
+                conversations[index].history = historyCopy;
+                conversations[index].updatedAt = new Date().toISOString();
+            }
+        } else {
+            const newId = 'conv_' + Date.now();
+            conversations.push({
+                id: newId,
+                name: name,
+                history: [...chatHistory],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            });
+            currentConversationId = newId;
+        }
+
+        saveConversations();
+        renderConversationsList();
+        closeSaveModal();
+        const nameEl = document.getElementById('currentConversationName');
+        if (nameEl) nameEl.textContent = name;
+    };
+
+    // Delete conversation
+    window.deleteConversation = function(conversationId) {
+        showCustomConfirm(
+            'Apakah kamu yakin ingin menghapus percakapan ini?',
+            'Hapus Percakapan',
+            () => {
+                conversations = conversations.filter(c => c.id !== conversationId);
+                
+                if (currentConversationId === conversationId) {
+                    createNewConversation();
+                }
+
+                saveConversations();
+                renderConversationsList();
+            }
+        );
+    };
+
+    // Toggle sidebar (mobile)
+    window.toggleSidebar = function() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar) sidebar.classList.toggle('open');
+        if (overlay) overlay.classList.toggle('active');
+    };
+
+    // Reset chat history
+    window.resetChatHistory = function() {
+        showCustomConfirm(
+            'Apakah kamu yakin ingin menghapus riwayat chat ini?',
+            'Hapus Riwayat',
+            () => {
+                chatHistory = [
+                {
+                    role: 'system',
+                    content: 'Kamu adalah AI Leaa, asisten AI yang ramah dan membantu. Kamu dibuat khusus untuk membantu Leaa dengan berbagai pertanyaan. Jawab dengan ramah, jelas, dan dalam bahasa Indonesia.'
+                }
+            ];
+            chatMessages.innerHTML = '';
+            const welcomeMsg = document.createElement('div');
+            welcomeMsg.className = 'welcome-message';
+            welcomeMsg.innerHTML = `
+                <i class="bi bi-chat-heart-fill"></i>
+                <h3>Halo! Saya AI Leaa</h3>
+                <p>Saya di sini untuk membantu kamu. Tanyakan apa saja yang ingin kamu ketahui! 💕</p>
+            `;
+            chatMessages.appendChild(welcomeMsg);
+            
+                // Update conversation if exists
+                if (currentConversationId) {
+                    const index = conversations.findIndex(c => c.id === currentConversationId);
+                    if (index !== -1) {
+                        // Deep copy to prevent reference sharing
+                        const historyCopy = JSON.parse(JSON.stringify(chatHistory));
+                        conversations[index].history = historyCopy;
+                        saveConversations();
+                    }
+                }
+                
+                const nameEl = document.getElementById('currentConversationName');
+                if (nameEl) nameEl.textContent = 'Percakapan Baru';
+            }
+        );
+    };
+
+    // Limit chat history
+    function limitChatHistory() {
+        const MAX_HISTORY = 20;
+        if (chatHistory.length > MAX_HISTORY) {
+            const systemMsg = chatHistory[0];
+            const recentMessages = chatHistory.slice(-MAX_HISTORY);
+            chatHistory = [systemMsg, ...recentMessages];
+        }
+    }
+
+    // Setup form and input event listeners
+    function setupChatInputListeners() {
+        // Get elements again to ensure they exist
+        const formEl = document.getElementById('chatForm');
+        const inputEl = document.getElementById('chatInput');
+        
+        if (!formEl || !inputEl) {
+            console.error('Chat form or input not found');
+            return;
+        }
+
+        // Prevent form submission
+        try {
+            formEl.addEventListener('submit', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (window.handleSendMessage) {
+                    window.handleSendMessage(event);
+                }
+                return false;
+            }, false);
+        } catch (error) {
+            console.error('Error setting up form event listener:', error);
+        }
+
+        // Auto-resize textarea with max-height
+        try {
+            inputEl.addEventListener('input', function() {
+                // Reset height to auto to get the correct scrollHeight
+                this.style.height = 'auto';
+                
+                // Calculate the new height based on content
+                const scrollHeight = this.scrollHeight;
+                const maxHeight = 200; // Match CSS max-height
+                
+                // Set height, but don't exceed max-height
+                if (scrollHeight <= maxHeight) {
+                    this.style.height = scrollHeight + 'px';
+                    this.style.overflowY = 'hidden';
+                } else {
+                    this.style.height = maxHeight + 'px';
+                    this.style.overflowY = 'auto';
+                }
+            });
+            
+            // Handle Enter key directly on textarea
+            inputEl.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (window.handleSendMessage) {
+                        window.handleSendMessage(event);
+                    }
+                    return false;
+                }
+            });
+            
+            // Also handle on load to set initial height
+            if (inputEl.value) {
+                inputEl.dispatchEvent(new Event('input'));
+            }
+        } catch (error) {
+            console.error('Error setting up chatInput event listener:', error);
+        }
+    }
+
+    // Call setup after DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupChatInputListeners);
+    } else {
+        setupChatInputListeners();
+    }
+
+    // Handle Enter key (for backward compatibility with onkeydown attribute)
+    window.handleKeyDown = function(event) {
+        if (!event) return false;
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (window.handleSendMessage) {
+                window.handleSendMessage(event);
+            }
+            return false;
+        }
+        return true;
+    };
+
+    // Scroll to bottom
+    function scrollToBottom() {
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // Format inline markdown
+    function formatInlineMarkdown(text) {
+        return text
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em>$1</em>');
+    }
+
+    // Extract and format code blocks
+    function formatCodeBlocks(text, knownCodeBlocks = null) {
+        const codeBlockRegex = /```(\w+)?\s*\n?([\s\S]*?)```/g;
+        const codeBlocks = [];
+        let blockIndex = 0;
+        
+        let formatted = text.replace(codeBlockRegex, (match, lang, code) => {
+            const cleanLang = (lang || 'text').trim();
+            const cleanCode = code.trim();
+            
+            let id;
+            if (knownCodeBlocks) {
+                const found = knownCodeBlocks.find(cb => 
+                    cb.lang === cleanLang && cb.code === cleanCode
+                );
+                if (found) {
+                    id = found.id;
+                }
+            }
+            
+            if (!id) {
+                id = `code-block-${Date.now()}-${blockIndex++}`;
+            }
+            
+            codeBlocks.push({ id, lang: cleanLang, code: cleanCode });
+            return `<div class="code-block-wrapper" data-code-id="${id}"></div>`;
+        });
+        
+        return { formatted, codeBlocks };
+    }
+
+    // Convert markdown-like text to HTML
+    function formatMessage(text, knownCodeBlocks = null) {
+        if (!text) return { html: '', codeBlocks: [] };
+        
+        const { formatted, codeBlocks } = formatCodeBlocks(text, knownCodeBlocks);
+        const lines = formatted.split('\n');
+        const processedLines = [];
+        let inList = false;
+        
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+            const trimmedLine = line.trim();
+            
+            if (line.includes('code-block-wrapper')) {
+                processedLines.push(line);
+                continue;
+            }
+            
+            const isListItem = /^[\*\-\•]\s+/.test(trimmedLine) || /^\d+\.\s+/.test(trimmedLine);
+            
+            if (isListItem) {
+                if (!inList) {
+                    processedLines.push('<ul>');
+                    inList = true;
+                }
+                line = line.replace(/^[\*\-\•]\s+/, '').replace(/^\d+\.\s+/, '');
+                line = formatInlineMarkdown(line);
+                processedLines.push(`<li>${line}</li>`);
+            } else {
+                if (inList) {
+                    processedLines.push('</ul>');
+                    inList = false;
+                }
+                line = formatInlineMarkdown(line);
+                if (line.trim()) {
+                    processedLines.push(line);
+                } else {
+                    processedLines.push('<br>');
+                }
+            }
+        }
+        
+        if (inList) {
+            processedLines.push('</ul>');
+        }
+        
+        return { html: processedLines.join('\n'), codeBlocks };
+    }
+
+    // Render code blocks with copy button
+    function renderCodeBlocks(container, codeBlocks) {
+        codeBlocks.forEach(({ id, lang, code }) => {
+            const wrapper = container.querySelector(`[data-code-id="${id}"]`);
+            if (wrapper) {
+                const escapedCode = escapeHtml(code);
+                const safeId = id.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                
+                wrapper.outerHTML = `
+                    <div class="code-block-container">
+                        <div class="code-block-header">
+                            <span class="code-block-lang">${lang}</span>
+                            <button class="copy-code-btn" onclick="window.copyCode('${safeId}')" title="Copy code">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                        </div>
+                        <pre class="code-block"><code id="${safeId}">${escapedCode}</code></pre>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    // Copy code to clipboard
+    window.copyCode = function(codeId) {
+        const codeElement = document.getElementById(codeId);
+        if (!codeElement) return;
+        
+        const code = codeElement.textContent;
+        navigator.clipboard.writeText(code).then(() => {
+            const container = codeElement.closest('.code-block-container');
+            if (container) {
+                const btn = container.querySelector('.copy-code-btn');
+                if (btn) {
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                    btn.style.background = '#28a745';
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.style.background = '';
+                    }, 2000);
+                }
+            }
+            }).catch(err => {
+            console.error('Failed to copy:', err);
+            showCustomAlert('Gagal menyalin kode. Silakan salin manual.', 'Error');
+        });
+    };
+
+    // Show typing indicator
+    function showTyping() {
+        if (typingIndicator) {
+            typingIndicator.classList.add('active');
+            typingIndicator.style.display = 'inline-block';
+            chatMessages.appendChild(typingIndicator);
+            scrollToBottom();
+        }
+    }
+
+    // Hide typing indicator
+    function hideTyping() {
+        if (typingIndicator) {
+            typingIndicator.classList.remove('active');
+            typingIndicator.style.display = 'none';
+        }
+    }
+
+    // Stop typing animation
+    window.stopTyping = function() {
+        isTyping = false;
+        if (typingController) {
+            typingController.abort();
+            typingController = null;
+        }
+        hideTyping();
+        hideStopButton();
+        
+        // Re-enable input
+        if (chatInput) chatInput.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
+    };
+
+    // Show stop button
+    function showStopButton() {
+        const form = document.getElementById('chatForm');
+        if (!form) return;
+        
+        let stopBtn = document.getElementById('stopBtn');
+        if (!stopBtn) {
+            stopBtn = document.createElement('button');
+            stopBtn.type = 'button';
+            stopBtn.id = 'stopBtn';
+            stopBtn.className = 'stop-btn';
+            stopBtn.innerHTML = '<i class="bi bi-stop-fill"></i> Stop';
+            stopBtn.onclick = stopTyping;
+            form.appendChild(stopBtn);
+        }
+        stopBtn.style.display = 'flex';
+        if (sendBtn) sendBtn.style.display = 'none';
+    }
+
+    // Hide stop button
+    function hideStopButton() {
+        const stopBtn = document.getElementById('stopBtn');
+        if (stopBtn) stopBtn.style.display = 'none';
+        if (sendBtn) sendBtn.style.display = 'flex';
+    }
+
+    // Typing animation with stop support
+    async function typeMessage(fullText, contentElement) {
+        isTyping = true;
+        typingController = new AbortController();
+        showStopButton();
+        
+        const codeBlockRegex = /```(\w+)?\s*\n?([\s\S]*?)```/g;
+        const codeBlockPositions = [];
+        let match;
+        let blockIndex = 0;
+        
+        codeBlockRegex.lastIndex = 0;
+        while ((match = codeBlockRegex.exec(fullText)) !== null) {
+            codeBlockPositions.push({
+                start: match.index,
+                end: match.index + match[0].length,
+                lang: (match[1] || 'text').trim(),
+                code: match[2].trim(),
+                id: `code-block-${Date.now()}-${blockIndex++}`
+            });
+        }
+        
+        codeBlockPositions.sort((a, b) => a.start - b.start);
+        
+        const segments = [];
+        let lastPos = 0;
+        
+        for (const codeBlock of codeBlockPositions) {
+            if (codeBlock.start > lastPos) {
+                segments.push({
+                    type: 'text',
+                    content: fullText.substring(lastPos, codeBlock.start)
+                });
+            }
+            
+            segments.push({
+                type: 'code',
+                content: codeBlock.code,
+                lang: codeBlock.lang,
+                id: codeBlock.id
+            });
+            
+            lastPos = codeBlock.end;
+        }
+        
+        if (lastPos < fullText.length) {
+            segments.push({
+                type: 'text',
+                content: fullText.substring(lastPos)
+            });
+        }
+        
+        if (segments.length === 0) {
+            segments.push({
+                type: 'text',
+                content: fullText
+            });
+        }
+        
+        contentElement.innerHTML = '';
+        const renderedCodeBlocks = [];
+        let segmentIndex = 0;
+        
+        for (const segment of segments) {
+            if (!isTyping) break;
+            
+            if (segment.type === 'text') {
+                const textContent = segment.content;
+                
+                for (let i = 0; i <= textContent.length; i++) {
+                    if (!isTyping) break;
+                    
+                    let textSoFar = '';
+                    let codeBlocksSoFar = [];
+                    
+                    for (let j = 0; j < segmentIndex; j++) {
+                        const seg = segments[j];
+                        if (seg.type === 'text') {
+                            textSoFar += seg.content;
+                        } else {
+                            textSoFar += `\`\`\`${seg.lang}\n${seg.content}\n\`\`\``;
+                            codeBlocksSoFar.push({
+                                id: seg.id,
+                                lang: seg.lang,
+                                code: seg.content
+                            });
+                        }
+                    }
+                    
+                    textSoFar += segment.content.substring(0, i);
+                    
+                    const { html, codeBlocks } = formatMessage(textSoFar, codeBlocksSoFar);
+                    contentElement.innerHTML = html;
+                    renderCodeBlocks(contentElement, codeBlocks);
+                    scrollToBottom();
+                    
+                    if (i < textContent.length) {
+                        const char = textContent[i];
+                        let delay = 15;
+                        if (char === ' ') delay = 5;
+                        else if (char === '.' || char === '!' || char === '?') delay = 80;
+                        else if (char === ',' || char === ';') delay = 40;
+                        else if (char === '\n') delay = 20;
+                        
+                        await new Promise((resolve, reject) => {
+                            if (typingController.signal.aborted) {
+                                reject(new Error('Stopped'));
+                                return;
+                            }
+                            setTimeout(resolve, delay);
+                            typingController.signal.addEventListener('abort', () => reject(new Error('Stopped')));
+                        }).catch(() => {
+                            isTyping = false;
+                        });
+                    }
+                }
+            } else {
+                if (!isTyping) break;
+                
+                renderedCodeBlocks.push({
+                    id: segment.id,
+                    lang: segment.lang,
+                    code: segment.content
+                });
+                
+                let textSoFar = '';
+                for (let j = 0; j <= segmentIndex; j++) {
+                    const seg = segments[j];
+                    if (seg.type === 'text') {
+                        textSoFar += seg.content;
+                    } else {
+                        textSoFar += `\`\`\`${seg.lang}\n${seg.content}\n\`\`\``;
+                    }
+                }
+                
+                const { html, codeBlocks } = formatMessage(textSoFar, renderedCodeBlocks);
+                contentElement.innerHTML = html;
+                renderCodeBlocks(contentElement, codeBlocks);
+                scrollToBottom();
+                
+                if (isTyping) {
+                    await new Promise((resolve, reject) => {
+                        if (typingController.signal.aborted) {
+                            reject(new Error('Stopped'));
+                            return;
+                        }
+                        setTimeout(resolve, 100);
+                        typingController.signal.addEventListener('abort', () => reject(new Error('Stopped')));
+                    }).catch(() => {
+                        isTyping = false;
+                    });
+                }
+            }
+            
+            segmentIndex++;
+        }
+        
+        if (isTyping) {
+            const { html: fullHTML, codeBlocks: allCodeBlocks } = formatMessage(fullText);
+            contentElement.innerHTML = fullHTML;
+            renderCodeBlocks(contentElement, allCodeBlocks);
+        }
+        
+        isTyping = false;
+        typingController = null;
+        hideStopButton();
+        scrollToBottom();
+    }
+
+    // Add message to chat
+    async function addMessage(text, isUser, animate = false, skipHistory = false) {
+        if (welcomeMessage && welcomeMessage.parentNode) {
+            welcomeMessage.remove();
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        avatar.innerHTML = isUser ? '<i class="bi bi-person-fill"></i>' : '<i class="bi bi-robot"></i>';
+
+        const content = document.createElement('div');
+        content.className = 'message-content';
+        
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(content);
+        chatMessages.appendChild(messageDiv);
+
+        if (isUser) {
+            content.textContent = text;
+            // Add user message to chatHistory if not already added and not skipping
+            if (!skipHistory) {
+                // Ensure chatHistory exists
+                if (!chatHistory || chatHistory.length === 0) {
+                    chatHistory = [{
+                        role: 'system',
+                        content: 'Kamu adalah AI Leaa, asisten AI yang ramah dan membantu. Kamu dibuat khusus untuk membantu Leaa dengan berbagai pertanyaan. Jawab dengan ramah, jelas, dan dalam bahasa Indonesia.'
+                    }];
+                }
+                const lastMessage = chatHistory[chatHistory.length - 1];
+                if (!lastMessage || lastMessage.content !== text || lastMessage.role !== 'user') {
+                    chatHistory.push({
+                        role: 'user',
+                        content: text
+                    });
+                }
+            }
+            scrollToBottom();
+        } else {
+            if (animate) {
+                await typeMessage(text, content);
+            } else {
+                const { html, codeBlocks } = formatMessage(text);
+                content.innerHTML = html;
+                renderCodeBlocks(content, codeBlocks);
+            }
+            // Add AI message to chatHistory if not already added and not skipping
+            if (!skipHistory) {
+                const lastMessage = chatHistory[chatHistory.length - 1];
+                if (!lastMessage || lastMessage.content !== text || lastMessage.role !== 'assistant') {
+                    chatHistory.push({
+                        role: 'assistant',
+                        content: text
+                    });
+                }
+            }
+            scrollToBottom();
+        }
+        
+        if (!skipHistory) {
+            saveChatHistory();
+            
+            // Auto-generate title after 3 messages (1 user + 1 AI + 1 user)
+            if (chatHistory.length >= 4 && currentConversationId) {
+                const conv = conversations.find(c => c.id === currentConversationId);
+                if (conv && conv.name === 'Percakapan Baru') {
+                    generateConversationTitle(currentConversationId);
+                }
+            }
+        }
+    }
+
+    // Get AI Response from API (no fallback)
+    async function getAIResponse(userMessage) {
+        // Ensure chatHistory is not empty (should have at least system message + user message)
+        if (!chatHistory || chatHistory.length < 2) {
+            console.error('Chat history is too short or undefined:', chatHistory);
+            // Try to ensure system message exists
+            if (!chatHistory || chatHistory.length === 0) {
+                chatHistory = [{
+                    role: 'system',
+                    content: 'Kamu adalah AI Leaa, asisten AI yang ramah dan membantu. Kamu dibuat khusus untuk membantu Leaa dengan berbagai pertanyaan. Jawab dengan ramah, jelas, dan dalam bahasa Indonesia.'
+                }];
+            }
+            // If still less than 2, add the user message
+            if (chatHistory.length < 2 && userMessage) {
+                chatHistory.push({
+                    role: 'user',
+                    content: userMessage
+                });
+            }
+            if (!chatHistory || chatHistory.length < 2) {
+                throw new Error('Chat history tidak lengkap. Silakan coba lagi.');
+            }
+        }
+        
+        // Check if API key is configured
+        if (API_CONFIG.provider === 'openai') {
+            if (!API_CONFIG.openai.apiKey || API_CONFIG.openai.apiKey === 'YOUR_OPENAI_API_KEY_HERE') {
+                throw new Error('API key OpenAI belum dikonfigurasi. Silakan set API key di Library/script.js');
+            }
+            return await getOpenAIResponse();
+        } else if (API_CONFIG.provider === 'gemini') {
+            if (!API_CONFIG.gemini.apiKey || API_CONFIG.gemini.apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
+                throw new Error('API key Gemini belum dikonfigurasi. Silakan set API key di Library/script.js');
+            }
+            return await getGeminiResponse();
+        } else {
+            throw new Error('Provider API belum dikonfigurasi. Silakan set provider ke "openai" atau "gemini" di Library/script.js');
+        }
+    }
+
+    // OpenAI API Call
+    async function getOpenAIResponse() {
+        const response = await fetch(API_CONFIG.openai.endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_CONFIG.openai.apiKey}`
+            },
+            body: JSON.stringify({
+                model: API_CONFIG.openai.model,
+                messages: chatHistory,
+                temperature: 0.7,
+                max_tokens: 1000
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'Error dari OpenAI API');
+        }
+
+        const data = await response.json();
+        const aiMessage = data.choices[0].message.content;
+
+        // Don't add to chatHistory here - addMessage will handle it
+        limitChatHistory();
+        return aiMessage;
+    }
+
+    // Google Gemini API Call
+    async function getGeminiResponse() {
+        const url = `${API_CONFIG.gemini.endpoint}?key=${API_CONFIG.gemini.apiKey}`;
+        
+        const contents = chatHistory
+            .filter(msg => msg.role !== 'system')
+            .map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+            }));
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contents: contents
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'Error dari Gemini API');
+        }
+
+        const data = await response.json();
+        const aiMessage = data.candidates[0].content.parts[0].text;
+
+        // Don't add to chatHistory here - addMessage will handle it
+        limitChatHistory();
+        return aiMessage;
+    }
+
+    // Handle send message
+    window.handleSendMessage = async function(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        // Get elements again to ensure they exist
+        const chatInputEl = document.getElementById('chatInput');
+        const sendBtnEl = document.getElementById('sendBtn');
+        
+        if (!chatInputEl || !sendBtnEl) {
+            console.error('Chat input elements not found');
+            if (event) event.preventDefault();
+            return false;
+        }
+        
+        const message = chatInputEl.value.trim();
+        if (!message) {
+            return false;
+        }
+
+        // Disable input
+        chatInputEl.disabled = true;
+        sendBtnEl.disabled = true;
+
+        try {
+            // Add user message (will add to chatHistory in addMessage)
+            await addMessage(message, true);
+
+            // Clear input
+            chatInputEl.value = '';
+            chatInputEl.style.height = 'auto';
+
+            // Ensure chatHistory is properly updated before calling API
+            // Wait a bit to ensure chatHistory is fully updated
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            // Verify chatHistory has at least system + user message
+            if (chatHistory.length < 2) {
+                console.error('Chat history is too short after adding message:', chatHistory);
+                throw new Error('Chat history tidak lengkap. Silakan coba lagi.');
+            }
+
+            // Show typing indicator
+            showTyping();
+
+            // Get AI response from API (chatHistory already includes user message from addMessage above)
+            const aiResponse = await getAIResponse(message);
+            hideTyping();
+            
+            // Add AI message with typing animation
+            await addMessage(aiResponse, false, true);
+        } catch (error) {
+            hideTyping();
+            console.error('Error in handleSendMessage:', error);
+            await addMessage(`Maaf, terjadi kesalahan: ${error.message}`, false, true);
+        } finally {
+            // Re-enable input
+            if (chatInputEl) chatInputEl.disabled = false;
+            if (sendBtnEl) sendBtnEl.disabled = false;
+            if (chatInputEl) chatInputEl.focus();
+        }
+        
+        return false;
+    };
+
+    // Load conversations on page load
+    window.addEventListener('load', () => {
+        loadConversations();
+        if (chatInput) chatInput.focus();
+    });
+
+    // Close sidebar when clicking outside (mobile)
+    document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        const toggle = document.getElementById('sidebarToggle');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('open')) {
+            if (!sidebar.contains(e.target) && e.target !== toggle && !toggle.contains(e.target) && e.target !== overlay) {
+                sidebar.classList.remove('open');
+                if (overlay) overlay.classList.remove('active');
+            }
+        }
+    });
+}
 
